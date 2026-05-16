@@ -24,7 +24,8 @@ st.markdown('<div class="sub-header">Binomial lattice | Snell envelope | Transac
 st.sidebar.markdown("## ⏸️ Optimal Stopping")
 st.sidebar.markdown(f"**Run Date:** `{st.session_state.get('run_date', 'Not loaded')}`")
 st.sidebar.markdown(f"**Next Trading Day:** `{next_trading_day()}`")
-st.sidebar.markdown(f"**Lookahead steps:** {config.N_STEPS}")
+st.sidebar.markdown(f"**Lookahead steps:** {config.N_STEPS} trading days")
+st.sidebar.markdown(f"**Horizon:** approx. {int(config.N_STEPS * 1.4)} calendar days")
 st.sidebar.markdown(f"**Trans cost:** {config.TRANSACTION_COST:.2%}")
 st.sidebar.markdown(f"**Risk‑free rate:** {config.RISK_FREE_RATE:.2%}")
 
@@ -92,17 +93,16 @@ for universe_name, uni_data in universes.items():
         top_ticker = top_etfs[0]['ticker']
         if top_ticker in details:
             prob = details[top_ticker].get('stopping_prob', [])
-            # Check if probability data exists and has any positive values
             if prob and max(prob) > 0:
-                steps = list(range(1, len(prob)+1))   # steps 1..N
+                steps = list(range(1, len(prob)+1))
                 fig = px.bar(
                     x=steps, y=prob,
-                    labels={'x':'Time step (days)', 'y':'Probability'},
+                    labels={'x':'Time step (trading days)', 'y':'Probability'},
                     title=f"Optimal stopping probability distribution (top ETF: {top_ticker})"
                 )
                 st.plotly_chart(fig, use_container_width=True, key=f"stop_prob_{universe_name}_{top_ticker}")
             else:
-                st.info(f"ℹ️ No early stopping predicted for {top_ticker} – optimal to hold until the end of the horizon.")
+                st.info(f"ℹ️ No early stopping predicted for {top_ticker} – optimal to hold until the end of the horizon ({config.N_STEPS} trading days, approx. {int(config.N_STEPS * 1.4)} calendar days).")
     with st.expander("📋 Full ranking (all ETFs)"):
         full = uni_data.get("full_scores", {})
         if full:
