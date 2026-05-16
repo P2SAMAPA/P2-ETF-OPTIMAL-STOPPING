@@ -90,16 +90,19 @@ for universe_name, uni_data in universes.items():
     details = uni_data.get("details", {})
     if details:
         top_ticker = top_etfs[0]['ticker']
-        if top_ticker in details and 'stopping_prob' in details[top_ticker]:
-            prob = details[top_ticker]['stopping_prob']
-            if prob and any(p > 0 for p in prob):  # non-empty and non-zero
-                steps = list(range(len(prob)))
-                fig = px.bar(x=steps, y=prob, labels={'x':'Time step', 'y':'Probability'},
-                             title=f"Optimal stopping probability distribution (top ETF: {top_ticker})")
-                # Add unique key using universe name and ticker to avoid duplicate ID
+        if top_ticker in details:
+            prob = details[top_ticker].get('stopping_prob', [])
+            # Check if probability data exists and has any positive values
+            if prob and max(prob) > 0:
+                steps = list(range(1, len(prob)+1))   # steps 1..N
+                fig = px.bar(
+                    x=steps, y=prob,
+                    labels={'x':'Time step (days)', 'y':'Probability'},
+                    title=f"Optimal stopping probability distribution (top ETF: {top_ticker})"
+                )
                 st.plotly_chart(fig, use_container_width=True, key=f"stop_prob_{universe_name}_{top_ticker}")
             else:
-                st.info(f"No stopping probability data for {top_ticker} (all zero).")
+                st.info(f"ℹ️ No early stopping predicted for {top_ticker} – optimal to hold until the end of the horizon.")
     with st.expander("📋 Full ranking (all ETFs)"):
         full = uni_data.get("full_scores", {})
         if full:
@@ -108,4 +111,4 @@ for universe_name, uni_data in universes.items():
             st.dataframe(df, use_container_width=True, hide_index=True)
     st.divider()
 
-st.caption("The optimal stopping problem is solved on a binomial lattice (10 steps, annualised vol from 60‑day window). The hold score = value of continuing / value of stopping now. A score >1 means it is optimal to wait; <1 means exit now.")
+st.caption("The optimal stopping problem is solved on a binomial lattice (10 steps, annualised vol from 60‑day window). The hold score = value of continuing / value of stopping now. A score >1 means it is optimal to wait; <1 means exit now. If no early stopping is shown, holding until the horizon is always optimal.")
