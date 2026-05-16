@@ -1,38 +1,18 @@
-# P2-ETF-OPTIMAL-STOPPING
+# Optimal Stopping Engine
 
-Welcome to the P2-ETF-Optimal-Stopping project repository.
+Solves the optimal stopping problem for ETF exit decisions using a binomial lattice and Snell envelope. Incorporates transaction costs and risk‑neutral probabilities. For each ETF, computes the hold score (value of continuing / value of stopping now). A score >1 suggests waiting is optimal.
 
-## Overview
+- **Lattice:** 10 steps, volatility from 60‑day rolling window
+- **Transaction cost:** 0.1% per exit
+- **Output:** top 3 ETFs by hold score, plus optimal stopping probability distribution
+- **Dashboard:** shows top ETFs, full ranking, and probability histogram
 
-This project focuses on optimal stopping strategies for ETF (Exchange-Traded Fund) trading and analysis.
+Runs daily on GitHub Actions.
 
-## Getting Started
-
-To get started with this project, clone the repository and install any required dependencies.
+## Local execution
 
 ```bash
-git clone https://github.com/P2SAMAPA/P2-ETF-OPTIMAL-STOPPING.git
-cd P2-ETF-OPTIMAL-STOPPING
-```
-
-## Project Structure
-
-- `/src` - Source code
-- `/docs` - Documentation
-- `/tests` - Test files
-
-## Usage
-
-[Add usage instructions here]
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a pull request.
-
-## License
-
-[Specify your license here]
-
-## Contact
-
-For questions or support, please open an issue in the repository.
+pip install -r requirements.txt
+export HF_TOKEN=<your_token>
+python trainer.py
+streamlit run streamlit_app.py
