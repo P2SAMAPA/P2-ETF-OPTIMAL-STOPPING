@@ -91,11 +91,13 @@ for universe_name, uni_data in universes.items():
     if details:
         top_ticker = top_etfs[0]['ticker']
         if top_ticker in details:
-            prob = details[top_ticker]['stopping_prob']
-            # Display as bar chart
-            steps = list(range(len(prob)))
-            fig = px.bar(x=steps, y=prob, labels={'x':'Time step', 'y':'Probability'}, title=f"Optimal stopping probability distribution (top ETF: {top_ticker})")
-            st.plotly_chart(fig, use_container_width=True)
+            prob = details[top_ticker].get('stopping_prob', [])
+            if prob:
+                steps = list(range(len(prob)))
+                fig = px.bar(x=steps, y=prob,
+                             labels={'x':'Time step', 'y':'Probability'},
+                             title=f"Optimal stopping probability distribution (top ETF: {top_ticker})")
+                st.plotly_chart(fig, use_container_width=True, key=f"stop_prob_{universe_name}")
     with st.expander("📋 Full ranking (all ETFs)"):
         full = uni_data.get("full_scores", {})
         if full:
