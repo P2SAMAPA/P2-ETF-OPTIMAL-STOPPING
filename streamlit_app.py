@@ -86,18 +86,20 @@ for universe_name, uni_data in universes.items():
                 <div class="etf-score">hold score = {etf['hold_score']:.4f}</div>
             </div>
             """, unsafe_allow_html=True)
-    # Show optimal stopping probabilities for top ETF (optional)
+    # Show optimal stopping probabilities for top ETF
     details = uni_data.get("details", {})
     if details:
         top_ticker = top_etfs[0]['ticker']
-        if top_ticker in details:
-            prob = details[top_ticker].get('stopping_prob', [])
-            if prob:
+        if top_ticker in details and 'stopping_prob' in details[top_ticker]:
+            prob = details[top_ticker]['stopping_prob']
+            if prob and any(p > 0 for p in prob):  # non-empty and non-zero
                 steps = list(range(len(prob)))
-                fig = px.bar(x=steps, y=prob,
-                             labels={'x':'Time step', 'y':'Probability'},
+                fig = px.bar(x=steps, y=prob, labels={'x':'Time step', 'y':'Probability'},
                              title=f"Optimal stopping probability distribution (top ETF: {top_ticker})")
-                st.plotly_chart(fig, use_container_width=True, key=f"stop_prob_{universe_name}")
+                # Add unique key using universe name and ticker to avoid duplicate ID
+                st.plotly_chart(fig, use_container_width=True, key=f"stop_prob_{universe_name}_{top_ticker}")
+            else:
+                st.info(f"No stopping probability data for {top_ticker} (all zero).")
     with st.expander("📋 Full ranking (all ETFs)"):
         full = uni_data.get("full_scores", {})
         if full:
