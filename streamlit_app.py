@@ -19,15 +19,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-header">⏸️ Optimal Stopping Engine</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Binomial lattice | Snell envelope | Transaction costs | Optimal exit timing</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Binomial lattice | Snell envelope | Transaction costs | Best window per ETF</div>', unsafe_allow_html=True)
 
 st.sidebar.markdown("## ⏸️ Optimal Stopping")
 st.sidebar.markdown(f"**Run Date:** `{st.session_state.get('run_date', 'Not loaded')}`")
 st.sidebar.markdown(f"**Next Trading Day:** `{next_trading_day()}`")
-st.sidebar.markdown(f"**Lookahead steps:** {config.N_STEPS} trading days")
-st.sidebar.markdown(f"**Horizon:** approx. {int(config.N_STEPS * 1.4)} calendar days")
+st.sidebar.markdown(f"**Lookahead steps:** {config.N_STEPS}")
 st.sidebar.markdown(f"**Trans cost:** {config.TRANSACTION_COST:.2%}")
-st.sidebar.markdown(f"**Risk‑free rate:** {config.RISK_FREE_RATE:.2%}")
+st.sidebar.markdown("**Windows evaluated:** 63, 252, 504, 1008, 2016 days (best per ETF)")
 
 OUTPUT_REPO = config.OUTPUT_REPO
 HF_TOKEN = config.HF_TOKEN
@@ -85,9 +84,10 @@ for universe_name, uni_data in universes.items():
             <div class="etf-card">
                 <div class="etf-ticker">{etf['ticker']}</div>
                 <div class="etf-score">hold score = {etf['hold_score']:.4f}</div>
+                <div class="etf-score">best window = {etf.get('best_window', 'N/A')}d</div>
             </div>
             """, unsafe_allow_html=True)
-    # Show optimal stopping probabilities for top ETF
+    # Show optimal stopping probabilities for top ETF (optional)
     details = uni_data.get("details", {})
     if details:
         top_ticker = top_etfs[0]['ticker']
@@ -102,13 +102,24 @@ for universe_name, uni_data in universes.items():
                 )
                 st.plotly_chart(fig, use_container_width=True, key=f"stop_prob_{universe_name}_{top_ticker}")
             else:
-                st.info(f"ℹ️ No early stopping predicted for {top_ticker} – optimal to hold until the end of the horizon ({config.N_STEPS} trading days, approx. {int(config.N_STEPS * 1.4)} calendar days).")
-    with st.expander("📋 Full ranking (all ETFs)"):
+                st.info(f"ℹ️ No early stopping predicted for {top_ticker} – optimal to hold until the end of the horizon ({config.N_STEPS} trading days).")
+    with st.expander("📋 Full ranking (all ETFs, best window per ETF)"):
         full = uni_data.get("full_scores", {})
         if full:
-            df = pd.DataFrame(list(full.items()), columns=["ETF", "Hold Score"])
-            df = df.sort_values("Hold Score", ascending=False)
+            rows = []
+            for ticker, info in full.items():
+                if isinstance(info, dict):
+                    score = info.get("score", 0.0)
+                    win = info.get("best_window", "N/A")
+                else:
+                    score = info
+                    win = "N/A"
+                rows.append({"ETF": ticker, "Hold Score": score, "Best Window": win})
+            df = pd.DataFrame(rows)
+            # Convert Hold Score to numeric and drop NaNs
+            df["Hold Score"] = pd.to_numeric(df["Hold Score"], errors='coerce')
+            df = df.dropna(subset=["Hold Score"]).sort_values("Hold Score", ascending=False)
             st.dataframe(df, use_container_width=True, hide_index=True)
     st.divider()
 
-st.caption("The optimal stopping problem is solved on a binomial lattice (10 steps, annualised vol from 60‑day window). The hold score = value of continuing / value of stopping now. A score >1 means it is optimal to wait; <1 means exit now. If no early stopping is shown, holding until the horizon is always optimal.")
+st.caption("The optimal stopping problem is solved on a binomial lattice for each ETF and each rolling window (63–2016 days). The hold score = value of continuing / value of stopping now. For each ETF, the window that gives the highest hold score is selected. A score >1 means it is optimal to wait; <1 means exit now. If no early stopping is shown, holding until the horizon is always optimal.")
