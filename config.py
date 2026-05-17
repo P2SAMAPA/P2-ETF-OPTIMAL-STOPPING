@@ -17,15 +17,13 @@ UNIVERSES = {
     ]
 }
 
-# Rolling window for volatility estimation (days)
-VOL_WINDOW = 60
+# Rolling windows for evaluation (days)
+WINDOWS = [63, 252, 504, 1008, 2016]
 
-# Lattice parameters
-N_STEPS = 10                # number of steps to look ahead
-RISK_FREE_RATE = 0.02       # annualised
-TRANSACTION_COST = 0.001    # 0.1% cost per exit (e.g., spread + commission)
-
-# Risk‑neutral probability calculation: up and down factors
-# We'll use volatility from historical returns
+# Optimal stopping parameters
+VOL_WINDOW = 60          # rolling window for volatility estimation
+N_STEPS = 10             # number of binomial steps (trading days ahead)
+RISK_FREE_RATE = 0.02    # annualised
+TRANSACTION_COST = 0.001 # 0.1% per exit
 
 TOP_N = 3
